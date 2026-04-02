@@ -3,297 +3,252 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Veille - Menuiseries Brignon/Uzès</title>
+<title>Veille — Menuiseries Brignon/Uzès</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0F172A;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
     color: #E2E8F0;
     line-height: 1.6;
     padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+    min-height: 100vh;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 30px 0 20px;
+    border-bottom: 1px solid #334155;
+    margin-bottom: 30px;
   }
   h1 {
-    font-size: 2rem;
-    background: linear-gradient(135deg, #60A5FA, #A78BFA);
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #60A5FA, #A78BFA, #F472B6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
   }
-  .subtitle {
-    color: #94A3B8;
-    font-size: 0.95rem;
-    margin-bottom: 30px;
-  }
+  .subtitle { color: #64748B; font-size: 0.95rem; margin-top: 5px; }
+  
+  /* Summary cards */
   .summary {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 12px;
     margin-bottom: 30px;
   }
-  .stat {
-    background: #1E293B;
-    border-radius: 12px;
-    padding: 16px;
-    text-align: center;
+  .stat-card {
+    background: rgba(30, 41, 59, 0.8);
     border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    backdrop-filter: blur(10px);
   }
-  .stat-num {
-    font-size: 2rem;
-    font-weight: 700;
-  }
-  .stat-label {
-    font-size: 0.8rem;
-    color: #64748B;
-    margin-top: 4px;
-  }
-  .zone {
-    margin-bottom: 30px;
-  }
+  .stat-num { font-size: 2.2rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: #64748B; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  
+  /* Zone sections */
+  .zone { margin-bottom: 35px; }
   .zone-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 15px;
+    padding-bottom: 8px; border-bottom: 2px solid;
   }
-  .zone-name {
-    font-size: 1.3rem;
-    font-weight: 700;
+  .zone-name { font-size: 1.2rem; font-weight: 700; }
+  .zone-badge {
+    background: rgba(100,116,139,0.2); border-radius: 20px;
+    padding: 2px 10px; font-size: 0.75rem; color: #94A3B8;
   }
-  .zone-count {
-    background: rgba(100,116,139,0.2);
-    border-radius: 20px;
-    padding: 2px 10px;
-    font-size: 0.8rem;
-    color: #94A3B8;
-  }
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 12px;
-  }
+  
+  /* Company cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 12px; }
   .card {
-    background: #1E293B;
-    border-radius: 12px;
-    padding: 16px;
+    background: rgba(30, 41, 59, 0.6);
     border: 1px solid #334155;
-    transition: transform 0.15s;
+    border-radius: 14px;
+    padding: 18px;
+    backdrop-filter: blur(10px);
   }
-  .card:hover {
-    transform: translateY(-2px);
-  }
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
-  .card-name {
-    font-weight: 600;
-    font-size: 1rem;
-    color: #F1F5F9;
-  }
-  .card-type {
-    font-size: 0.8rem;
-    color: #94A3B8;
-    margin-bottom: 8px;
-  }
-  .card-meta {
-    font-size: 0.8rem;
-    color: #64748B;
-  }
-  .card-meta a {
-    color: #60A5FA;
-    text-decoration: none;
-  }
-  .card-meta a:hover {
-    text-decoration: underline;
-  }
-  .card-keywords {
-    margin-top: 8px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-  .keyword {
-    background: rgba(96, 165, 250, 0.15);
-    color: #60A5FA;
-    padding: 2px 8px;
-    border-radius: 6px;
+  .card.changed { border-left: 3px solid #F59E0B; }
+  .card.has-error { border-left: 3px solid #EF4444; }
+  .card.clean { border-left: 3px solid #64748B; }
+  
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .card-name { font-weight: 600; font-size: 1.05rem; color: #F1F5F9; }
+  .card-type { font-size: 0.8rem; color: #64748B; margin-bottom: 8px; }
+  .card-meta { font-size: 0.8rem; color: #94A3B8; }
+  .card-meta a { color: #60A5FA; text-decoration: none; }
+  .card-meta a:hover { text-decoration: underline; }
+  
+  .status-badge {
     font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 8px;
+    display: inline-block;
+    margin: 3px 2px;
   }
-  .keyword.promo {
-    background: rgba(16, 185, 129, 0.15);
-    color: #34D399;
-  }
-  .keyword.cert {
-    background: rgba(251, 191, 36, 0.15);
-    color: #FBBF24;
-  }
-  .footer {
-    text-align: center;
-    color: #475569;
+  .status-change { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+  .status-new { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+  .status-error { background: rgba(239, 68, 68, 0.15); color: #F87171; }
+  .status-clean { background: rgba(107, 114, 128, 0.15); color: #6B7280; }
+  .status-legal { background: rgba(168, 85, 247, 0.15); color: #C084FC; }
+  .status-social { background: rgba(34, 197, 94, 0.15); color: #4ADE80; }
+  
+  .diff-box {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 8px 0;
     font-size: 0.8rem;
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #1E293B;
+    font-family: 'SF Mono', 'Consolas', monospace;
+    overflow-x: auto;
+  }
+  .diff-add { color: #4ADE80; }
+  .diff-del { color: #F87171; }
+  .diff-label { color: #64748B; font-size: 0.7rem; text-transform: uppercase; }
+  
+  .keywords { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
+  .kw { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; }
+  .kw-new { background: rgba(245, 158, 11, 0.15); color: #FBBF24; }
+  .kw-promo { background: rgba(16, 185, 129, 0.15); color: #34D399; }
+  .kw-tech { background: rgba(139, 92, 246, 0.15); color: #A78BFA; }
+  .kw-cert { background: rgba(59, 130, 246, 0.15); color: #60A5FA; }
+  
+  .social-icons { display: flex; gap: 6px; margin: 8px 0 0; }
+  .social-icon {
+    font-size: 0.75rem; padding: 3px 8px;
+    background: rgba(100,116,139,0.1); border-radius: 6px;
+    color: #94A3B8; text-decoration: none;
+  }
+  .social-icon.active { color: #4ADE80; background: rgba(34, 197, 94, 0.1); }
+  .social-icon.inactive { color: #EF4444; background: rgba(239, 68, 68, 0.1); }
+  
+  .footer {
+    text-align: center; color: #475569; font-size: 0.75rem;
+    margin-top: 40px; padding-top: 20px; border-top: 1px solid #1E293B;
   }
 </style>
 </head>
 <body>
-
-<h1>🔍 Veille Concurrentielle</h1>
-<div class="subtitle">Menuiseries & Artisans — Brignon / Uzès · Rapport du 02/04/2026 à 07:58</div>
-
-<div class="summary">
-  <div class="stat">
-    <div class="stat-num" style="color: #60A5FA;">22</div>
-    <div class="stat-label">Entreprises surveillées</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num" style="color: #F59E0B;">0</div>
-    <div class="stat-label">Changements</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num" style="color: #3B82F6;">18</div>
-    <div class="stat-label">Premiers scans</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num" style="color: #6B7280;">0</div>
-    <div class="stat-label">Inchangés</div>
-  </div>
-  <div class="stat">
-    <div class="stat-num" style="color: #EF4444;">3</div>
-    <div class="stat-label">Erreurs</div>
-  </div>
+<div class="container">
+<div class="header">
+  <h1>🔍 Veille Concurrentielle</h1>
+  <div class="subtitle">Menuiseries & Artisans — Brignon / Uzès · Rapport du {now}</div>
 </div>
 
+<div class="summary">
+  <div class="stat-card"><div class="stat-num" style="color: #60A5FA;">22</div><div class="stat-label">Entreprises</div></div>
+  <div class="stat-card"><div class="stat-num" style="color: #F59E0B;">0</div><div class="stat-label">Changements</div></div>
+  <div class="stat-card"><div class="stat-num" style="color: #EF4444;">0</div><div class="stat-label">Erreurs</div></div>
+  <div class="stat-card"><div class="stat-num" style="color: #4ADE80;">22</div><div class="stat-label">Réseaux sociaux</div></div>
+</div>
 
 <div class="zone">
   <div class="zone-header" style="border-color: #EF4444;">
     <span class="zone-name" style="color: #EF4444;">Alès</span>
-    <span class="zone-count">5 entreprises</span>
+    <span class="zone-badge">5 entreprises</span>
   </div>
   <div class="cards">
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">ABL-30 Menuiserie</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Menuiserie, volets, placards, portes</div>
-      <div class="card-meta">
-         · <a href="https://www.abl-30.com/menuiserie" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword promo">service</span><span class="keyword ">contact</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">AJC Menuiseries</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Fenêtres aluminium, pergolas, volets</div>
-      <div class="card-meta">
-        04 66 83 16 08 · <a href="https://ajc-menuiseries.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">rdv</span></div>
+      <div class="card-meta">04 66 83 16 08 · <a href="https://ajc-menuiseries.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">nouveau</span><span class="kw kw-new">ouverture</span><span class="kw kw-promo">offre</span><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">service</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span><span class="kw kw-tech">pac</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
-        <span class="card-name">Agnes M Menuiserie</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
+        <span class="card-name">ABL-30 Menuiserie</span>
       </div>
-      <div class="card-type">Menuisier Alès</div>
-      <div class="card-meta">
-         · <a href="https://agnesm-menuiserie.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">nouvel</span><span class="keyword ">nouvelle</span><span class="keyword promo">offre</span><span class="keyword promo">service</span><span class="keyword promo">réalisation</span><span class="keyword promo">projet</span><span class="keyword promo">chantier</span><span class="keyword cert">rge</span><span class="keyword ">contact</span><span class="keyword ">devis</span><span class="keyword ">rendez-vous</span><span class="keyword ">formulaire</span></div>
+      <div class="card-type">Menuiserie, volets, placards, portes</div>
+      <div class="card-meta"> · <a href="https://www.abl-30.com/menuiserie" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">ouverture</span><span class="kw kw-cert">service</span><span class="kw kw-tech">pac</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">M2C Menuiserie</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Menuiserie</div>
-      <div class="card-meta">
-         · <a href="https://www.m2c-menuiserie.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">nouveau</span><span class="keyword ">nouveauté</span><span class="keyword promo">devis gratuit</span><span class="keyword promo">service</span><span class="keyword promo">prestation</span><span class="keyword promo">réalisation</span><span class="keyword promo">projet</span><span class="keyword cert">rge</span><span class="keyword cert">norme</span><span class="keyword ">contact</span><span class="keyword ">devis</span></div>
+      <div class="card-meta"> · <a href="https://www.m2c-menuiserie.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">nouveau</span><span class="kw kw-new">nouveauté</span><span class="kw kw-new">ouverture</span><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">service</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span><span class="kw kw-cert">norme</span><span class="kw kw-tech">connecté</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Menuiseries Aluminium Jolivet</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Aluminium et PVC</div>
-      <div class="card-meta">
-         · <a href="https://www.menuiseriesaluminiumjolivet.fr/" target="_blank">Visiter →</a>
+      <div class="card-meta"> · <a href="https://www.menuiseriesaluminiumjolivet.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">ouverture</span><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">chantier</span><span class="kw kw-tech">solaire</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Agnes M Menuiserie</span>
       </div>
-      <div class="card-keywords"><span class="keyword ">rdv</span></div>
+      <div class="card-type">Menuisier Alès</div>
+      <div class="card-meta"> · <a href="https://agnesm-menuiserie.fr/menuisier-ales" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-promo">offre</span><span class="kw kw-cert">service</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">catalogue</span><span class="kw kw-cert">rge</span><span class="kw kw-cert">norme</span><span class="kw kw-tech">pac</span><span class="kw kw-tech">solaire</span></div>
     </div>
   </div>
 </div>
 
 <div class="zone">
-  <div class="zone-header" style="border-color: #3B82F6;">
-    <span class="zone-name" style="color: #3B82F6;">Brignon</span>
-    <span class="zone-count">4 entreprises</span>
+  <div class="zone-header" style="border-color: #64748B;">
+    <span class="zone-name" style="color: #64748B;">Brignon</span>
+    <span class="zone-badge">4 entreprises</span>
   </div>
   <div class="cards">
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Ecobat Concept - Menuiseries Terres de Fenêtre</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Fenêtres PVC/aluminium, volets, stores</div>
-      <div class="card-meta">
-        04 66 30 69 53 · <a href="https://www.ecobat-concept.com/" target="_blank">Visiter →</a>
-      </div>
-      
+      <div class="card-meta">04 66 30 69 53 · <a href="https://www.ecobat-concept.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">nouvel</span><span class="kw kw-new">nouvelle</span><span class="kw kw-new">ouverture</span><span class="kw kw-promo">offre</span><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">service</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">certification</span><span class="kw kw-cert">qualibat</span><span class="kw kw-cert">rge</span><span class="kw kw-cert">certifié</span><span class="kw kw-tech">pac</span><span class="kw kw-tech">domotique</span><span class="kw kw-tech">motorisation</span><span class="kw kw-tech">solaire</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Menuiserie Laporte</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Atelier de menuiserie</div>
-      <div class="card-meta">
-        06 22 34 03 54 · <a href="https://www.menuiserielaporte.com/" target="_blank">Visiter →</a>
-      </div>
-      
+      <div class="card-meta">06 22 34 03 54 · <a href="https://www.menuiserielaporte.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">service</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">Menuiserie Pergola Concept</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Menuiserie + pergolas</div>
-      <div class="card-meta">
-        04 66 19 16 29 · <a href="https://www.mpc-menuiserie.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">contact</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(239, 68, 68, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Menuiserie RIOCROS</span>
-        <span style="font-size: 0.85rem;"><span style="color: #EF4444;">❌ Erreur</span></span>
       </div>
       <div class="card-type">Menuiserie artisanale</div>
-      <div class="card-meta">
-        06 48 16 79 79 · <a href="http://www.boiseriebynature.com/" target="_blank">Visiter →</a>
+      <div class="card-meta">06 48 16 79 79 · <a href="http://www.boiseriebynature.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">service</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Menuiserie Pergola Concept</span>
       </div>
+      <div class="card-type">Menuiserie + pergolas</div>
+      <div class="card-meta">04 66 19 16 29 · <a href="https://www.mpc-menuiserie.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
       
     </div>
   </div>
@@ -302,44 +257,38 @@
 <div class="zone">
   <div class="zone-header" style="border-color: #F59E0B;">
     <span class="zone-name" style="color: #F59E0B;">Nîmes</span>
-    <span class="zone-count">3 entreprises</span>
+    <span class="zone-badge">3 entreprises</span>
   </div>
   <div class="cards">
 
-    <div class="card" style="background: ;">
-      <div class="card-header">
-        <span class="card-name">Accès Clôtures Sarl</span>
-        <span style="font-size: 0.85rem;">None</span>
-      </div>
-      <div class="card-type">Clôtures, portails</div>
-      <div class="card-meta">
-        04 66 84 60 56 · Pas de site
-      </div>
-      
-    </div>
-
-    <div class="card" style="background: rgba(239, 68, 68, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">DH Menuiserie - Komilfo</span>
-        <span style="font-size: 0.85rem;"><span style="color: #EF4444;">❌ Erreur</span></span>
       </div>
       <div class="card-type">Pergolas, stores, fenêtres</div>
-      <div class="card-meta">
-        04 66 84 05 78 · <a href="https://www.komilfo.fr/magasins/dh-menuiserie-nimes-ales-30" target="_blank">Visiter →</a>
-      </div>
+      <div class="card-meta">04 66 84 05 78 · <a href="https://www.komilfo.fr/magasins/dh-menuiserie-nimes-ales-30" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"></div>
       
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
-        <span class="card-name">Monsieur Store Nîmes - Nemausus Fermetures</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
+        <span class="card-name">Monsieur Store Nîmes</span>
       </div>
       <div class="card-type">Stores, fermetures, volets</div>
-      <div class="card-meta">
-        04 66 81 15 84 · <a href="https://monsieurstore.com/magasin/nimes-30000/" target="_blank">Visiter →</a>
+      <div class="card-meta">04 66 81 15 84 · <a href="https://monsieurstore.com/magasin/nimes-30000/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">nouveau</span><span class="kw kw-new">nouveauté</span><span class="kw kw-new">nouvel</span><span class="kw kw-new">nouvelle</span><span class="kw kw-new">ouverture</span><span class="kw kw-promo">offre</span><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">service</span><span class="kw kw-cert">prestation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">chantier</span><span class="kw kw-cert">rge</span><span class="kw kw-cert">certifié</span><span class="kw kw-tech">pac</span><span class="kw kw-tech">domotique</span><span class="kw kw-tech">connecté</span><span class="kw kw-tech">solaire</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Accès Clôtures Sarl</span>
       </div>
-      <div class="card-keywords"><span class="keyword ">nouveau</span><span class="keyword ">nouveauté</span><span class="keyword ">nouvel</span><span class="keyword ">nouvelle</span><span class="keyword promo">offre</span><span class="keyword promo">devis gratuit</span><span class="keyword promo">service</span><span class="keyword promo">prestation</span><span class="keyword promo">projet</span><span class="keyword promo">chantier</span><span class="keyword cert">rge</span><span class="keyword cert">certifié</span><span class="keyword ">contact</span><span class="keyword ">devis</span><span class="keyword ">rendez-vous</span><span class="keyword ">formulaire</span></div>
+      <div class="card-type">Clôtures, portails</div>
+      <div class="card-meta">04 66 84 60 56 · Pas de site</div>
+      <div style="margin: 6px 0;"></div>
+      
     </div>
   </div>
 </div>
@@ -347,20 +296,18 @@
 <div class="zone">
   <div class="zone-header" style="border-color: #10B981;">
     <span class="zone-name" style="color: #10B981;">Sainte-Anastasie</span>
-    <span class="zone-count">1 entreprise</span>
+    <span class="zone-badge">1 entreprise</span>
   </div>
   <div class="cards">
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">SARL Menuiserie Bancel</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Menuiserie générale, pose fenêtres</div>
-      <div class="card-meta">
-         · <a href="https://www.posefenetres.fr/menuiserie-bancel-sainte-anastasie.html" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">contact</span></div>
+      <div class="card-meta"> · <a href="https://www.posefenetres.fr/menuiserie-bancel-sainte-anastasie.html" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      
     </div>
   </div>
 </div>
@@ -368,123 +315,105 @@
 <div class="zone">
   <div class="zone-header" style="border-color: #8B5CF6;">
     <span class="zone-name" style="color: #8B5CF6;">Uzès</span>
-    <span class="zone-count">9 entreprises</span>
+    <span class="zone-badge">9 entreprises</span>
   </div>
   <div class="cards">
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">Baies & Stores Uzès</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Baies vitrées, stores</div>
-      <div class="card-meta">
-        04 34 32 75 45 · <a href="http://baiesandstores.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword promo">projet</span><span class="keyword cert">rge</span><span class="keyword ">contact</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">CSM Sur-Mesure</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Menuiserie sur mesure</div>
-      <div class="card-meta">
-        04 66 62 00 45 · <a href="https://uzes.surmesure-menuiserie.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword promo">offre</span><span class="keyword promo">réduction</span><span class="keyword promo">service</span><span class="keyword promo">projet</span><span class="keyword cert">rge</span><span class="keyword ">contact</span><span class="keyword ">devis</span><span class="keyword ">rendez-vous</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">Ducros Aluminium Toutes Fermetures</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Aluminium, fermetures</div>
-      <div class="card-meta">
-        04 66 58 08 83 · <a href="http://www.ducros-atf.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword promo">offre</span><span class="keyword promo">service</span><span class="keyword promo">projet</span><span class="keyword cert">rge</span><span class="keyword ">contact</span><span class="keyword ">devis</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
-      <div class="card-header">
-        <span class="card-name">Ghezzi Père et Fils Sté</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
-      </div>
-      <div class="card-type">Atelier de menuiserie</div>
-      <div class="card-meta">
-        04 66 22 12 03 · <a href="https://www.ghezzimenuiserie.fr/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword ">nouvel</span><span class="keyword ">nouvelle</span><span class="keyword promo">promotion</span><span class="keyword promo">promo</span><span class="keyword promo">service</span><span class="keyword promo">réalisation</span><span class="keyword promo">projet</span><span class="keyword promo">chantier</span><span class="keyword ">contact</span></div>
-    </div>
-
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Guarch Menuiserie et Agencement</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Menuiserie et agencement</div>
-      <div class="card-meta">
-        04 66 72 24 22 · <a href="http://www.menuiserieguarch.fr/" target="_blank">Visiter →</a>
-      </div>
-      
+      <div class="card-meta">04 66 72 24 22 · <a href="http://www.menuiserieguarch.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">qualibat</span><span class="kw kw-cert">rge</span><span class="kw kw-cert">norme</span><span class="kw kw-cert">certifié</span><span class="kw kw-cert">label</span><span class="kw kw-tech">solaire</span></div>
     </div>
 
-    <div class="card" style="background: rgba(239, 68, 68, 0.1);">
+    <div class="card clean">
       <div class="card-header">
-        <span class="card-name">Lestage Ébénisterie</span>
-        <span style="font-size: 0.85rem;"><span style="color: #EF4444;">❌ Erreur</span></span>
+        <span class="card-name">Ghezzi Père et Fils Sté</span>
       </div>
-      <div class="card-type">Ébénisterie</div>
-      <div class="card-meta">
-        06 61 24 35 15 · <a href="https://lestage-ebenisterie.jimdosite.com/" target="_blank">Visiter →</a>
-      </div>
-      
+      <div class="card-type">Atelier de menuiserie</div>
+      <div class="card-meta">04 66 22 12 03 · <a href="https://www.ghezzimenuiserie.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">nouvel</span><span class="kw kw-new">nouvelle</span><span class="kw kw-promo">promotion</span><span class="kw kw-promo">promo</span><span class="kw kw-cert">service</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">chantier</span><span class="kw kw-tech">pac</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
-        <span class="card-name">Maitre Store - La Boutique du Menuisier Uzès</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
+        <span class="card-name">CSM Sur-Mesure</span>
       </div>
-      <div class="card-type">Stores, menuiserie</div>
-      <div class="card-meta">
-        04 66 74 31 36 · <a href="https://www.maitrestore.com/" target="_blank">Visiter →</a>
-      </div>
-      <div class="card-keywords"><span class="keyword promo">projet</span><span class="keyword cert">certification</span><span class="keyword ">contact</span><span class="keyword ">devis</span></div>
+      <div class="card-type">Menuiserie sur mesure</div>
+      <div class="card-meta">04 66 62 00 45 · <a href="https://uzes.surmesure-menuiserie.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">ouverture</span><span class="kw kw-promo">offre</span><span class="kw kw-promo">réduction</span><span class="kw kw-cert">service</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span><span class="kw kw-tech">motorisation</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
-        <span class="card-name">Menuiserie de l'Uzège Guillaume Balbo</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
+        <span class="card-name">Baies & Stores Uzès</span>
       </div>
-      <div class="card-type">Menuiserie</div>
-      <div class="card-meta">
-        06 03 61 68 62 · <a href="https://guillaumebalbo.wixsite.com/menuiseriedeluzege" target="_blank">Visiter →</a>
-      </div>
-      
+      <div class="card-type">Baies vitrées, stores</div>
+      <div class="card-meta">04 34 32 75 45 · <a href="http://baiesandstores.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span></div>
     </div>
 
-    <div class="card" style="background: rgba(59, 130, 246, 0.1);">
+    <div class="card clean">
       <div class="card-header">
         <span class="card-name">Menuiserie Ébénisterie Roussel</span>
-        <span style="font-size: 0.85rem;"><span style="color: #3B82F6;">🆕 Premier scan</span></span>
       </div>
       <div class="card-type">Menuiserie ébénisterie</div>
-      <div class="card-meta">
-        04 66 22 66 18 · <a href="https://www.rousselmenuiserie.com/" target="_blank">Visiter →</a>
+      <div class="card-meta">04 66 22 66 18 · <a href="https://www.rousselmenuiserie.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-promo">devis gratuit</span><span class="kw kw-cert">réalisation</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">norme</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Menuiserie de l'Uzège Guillaume Balbo</span>
       </div>
-      <div class="card-keywords"><span class="keyword promo">devis gratuit</span><span class="keyword promo">réalisation</span><span class="keyword promo">projet</span><span class="keyword cert">norme</span><span class="keyword ">contact</span><span class="keyword ">devis</span></div>
+      <div class="card-type">Menuiserie</div>
+      <div class="card-meta">06 03 61 68 62 · <a href="https://guillaumebalbo.wixsite.com/menuiseriedeluzege" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">service</span><span class="kw kw-cert">projet</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Lestage Ébénisterie</span>
+      </div>
+      <div class="card-type">Ébénisterie</div>
+      <div class="card-meta">06 61 24 35 15 · <a href="https://lestage-ebenisterie.jimdosite.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"></div>
+      
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Ducros Aluminium Toutes Fermetures</span>
+      </div>
+      <div class="card-type">Aluminium, fermetures</div>
+      <div class="card-meta">04 66 58 08 83 · <a href="http://www.ducros-atf.fr/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-new">ouverture</span><span class="kw kw-promo">offre</span><span class="kw kw-cert">service</span><span class="kw kw-cert">projet</span><span class="kw kw-cert">rge</span><span class="kw kw-tech">pac</span><span class="kw kw-tech">solaire</span></div>
+    </div>
+
+    <div class="card clean">
+      <div class="card-header">
+        <span class="card-name">Maitre Store - La Boutique du Menuisier</span>
+      </div>
+      <div class="card-type">Stores, menuiserie</div>
+      <div class="card-meta">04 66 74 31 36 · <a href="https://www.maitrestore.com/" target="_blank">🌐 Site</a></div>
+      <div style="margin: 6px 0;"><span class="status-badge status-new">🆕 Nouveau</span></div>
+      <div class="keywords"><span class="kw kw-cert">projet</span><span class="kw kw-cert">certification</span></div>
     </div>
   </div>
 </div>
 
 <div class="footer">
-  Veille automatique · 22 entreprises · Généré le 02/04/2026 à 07:58
+  Veille automatique · 22 entreprises · Sources: sites web, avis Google, Pappers, réseaux sociaux · Généré à 02/04/2026 à 08:48
 </div>
-
+</div>
 </body>
 </html>
