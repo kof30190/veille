@@ -1,0 +1,206 @@
+{
+  "name": "veille-entreprises",
+  "description": "Veille technologique - Menuiseries et artisans autour de Brignon/Uzès",
+  "version": "1.0.0",
+  "last_update": null,
+  "companies": [
+    {
+      "id": "ecobat-concept",
+      "name": "Ecobat Concept - Menuiseries Terres de Fenêtre",
+      "zone": "Brignon",
+      "address": "1 Chemin de Castelnau Valence, 30190 Brignon",
+      "phone": "04 66 30 69 53",
+      "website": "https://www.ecobat-concept.com/",
+      "type": "Fenêtres PVC/aluminium, volets, stores"
+    },
+    {
+      "id": "menuiserie-laporte",
+      "name": "Menuiserie Laporte",
+      "zone": "Brignon",
+      "address": "5 Rue de l'Égalité, 30190 Brignon",
+      "phone": "06 22 34 03 54",
+      "website": "https://www.menuiserielaporte.com/",
+      "type": "Atelier de menuiserie"
+    },
+    {
+      "id": "menuiserie-riocros",
+      "name": "Menuiserie RIOCROS",
+      "zone": "Brignon",
+      "address": "6 Chem. de Tavillan, 30190",
+      "phone": "06 48 16 79 79",
+      "website": "http://www.boiseriebynature.com/",
+      "type": "Menuiserie artisanale"
+    },
+    {
+      "id": "menuiserie-pergola-concept",
+      "name": "Menuiserie Pergola Concept",
+      "zone": "Brignon",
+      "address": "163 rue Nicolas Martin, Carrière Vieille Z.A",
+      "phone": "04 66 19 16 29",
+      "website": "https://www.mpc-menuiserie.fr/",
+      "type": "Menuiserie + pergolas"
+    },
+    {
+      "id": "menuiserie-bancel",
+      "name": "SARL Menuiserie Bancel",
+      "zone": "Sainte-Anastasie",
+      "address": "12 Impasse des Cabanes, 30190 Sainte-Anastasie",
+      "phone": "",
+      "website": "https://www.posefenetres.fr/menuiserie-bancel-sainte-anastasie.html",
+      "type": "Menuiserie générale, pose fenêtres"
+    },
+    {
+      "id": "dh-menuiserie",
+      "name": "DH Menuiserie - Komilfo",
+      "zone": "Nîmes",
+      "address": "6 bis les arnaves, Rte de Nîmes",
+      "phone": "04 66 84 05 78",
+      "website": "https://www.komilfo.fr/magasins/dh-menuiserie-nimes-ales-30",
+      "type": "Pergolas, stores, fenêtres"
+    },
+    {
+      "id": "monsieur-store",
+      "name": "Monsieur Store Nîmes - Nemausus Fermetures",
+      "zone": "Nîmes",
+      "address": "43 Grand Rue, 30000 Nîmes",
+      "phone": "04 66 81 15 84",
+      "website": "https://monsieurstore.com/magasin/nimes-30000/",
+      "type": "Stores, fermetures, volets"
+    },
+    {
+      "id": "acces-clotures",
+      "name": "Accès Clôtures Sarl",
+      "zone": "Nîmes",
+      "address": "126 Avenue Pavlov, Nîmes",
+      "phone": "04 66 84 60 56",
+      "website": "",
+      "type": "Clôtures, portails"
+    },
+    {
+      "id": "ajc-menuiseries",
+      "name": "AJC Menuiseries",
+      "zone": "Alès",
+      "address": "125 Ancien Chemin de Méjannes",
+      "phone": "04 66 83 16 08",
+      "website": "https://ajc-menuiseries.fr/",
+      "type": "Fenêtres aluminium, pergolas, volets"
+    },
+    {
+      "id": "abl-30",
+      "name": "ABL-30 Menuiserie",
+      "zone": "Alès",
+      "address": "Alès",
+      "phone": "",
+      "website": "https://www.abl-30.com/menuiserie",
+      "type": "Menuiserie, volets, placards, portes"
+    },
+    {
+      "id": "m2c-menuiserie",
+      "name": "M2C Menuiserie",
+      "zone": "Alès",
+      "address": "Alès",
+      "phone": "",
+      "website": "https://www.m2c-menuiserie.fr/",
+      "type": "Menuiserie"
+    },
+    {
+      "id": "jolivet-alu",
+      "name": "Menuiseries Aluminium Jolivet",
+      "zone": "Alès",
+      "address": "Alès/Gard",
+      "phone": "",
+      "website": "https://www.menuiseriesaluminiumjolivet.fr/",
+      "type": "Aluminium et PVC"
+    },
+    {
+      "id": "agnes-m",
+      "name": "Agnes M Menuiserie",
+      "zone": "Alès",
+      "address": "Alès",
+      "phone": "",
+      "website": "https://agnesm-menuiserie.fr/",
+      "type": "Menuisier Alès"
+    },
+    {
+      "id": "guarch",
+      "name": "Guarch Menuiserie et Agencement",
+      "zone": "Uzès",
+      "address": "184 Chem. du Mas des Tailles",
+      "phone": "04 66 72 24 22",
+      "website": "http://www.menuiserieguarch.fr/",
+      "type": "Menuiserie et agencement"
+    },
+    {
+      "id": "ghezzi",
+      "name": "Ghezzi Père et Fils Sté",
+      "zone": "Uzès",
+      "address": "Pont Charrettes, Rue de l'Alzon",
+      "phone": "04 66 22 12 03",
+      "website": "https://www.ghezzimenuiserie.fr/",
+      "type": "Atelier de menuiserie"
+    },
+    {
+      "id": "csm-sur-mesure",
+      "name": "CSM Sur-Mesure",
+      "zone": "Uzès",
+      "address": "1432 Rte de Remoulins",
+      "phone": "04 66 62 00 45",
+      "website": "https://uzes.surmesure-menuiserie.fr/",
+      "type": "Menuiserie sur mesure"
+    },
+    {
+      "id": "baies-stores-uzes",
+      "name": "Baies & Stores Uzès",
+      "zone": "Uzès",
+      "address": "2 Av. Maréchal Foch, Uzès",
+      "phone": "04 34 32 75 45",
+      "website": "http://baiesandstores.fr/",
+      "type": "Baies vitrées, stores"
+    },
+    {
+      "id": "roussel",
+      "name": "Menuiserie Ébénisterie Roussel",
+      "zone": "Uzès",
+      "address": "1131 Rte d'Uzès",
+      "phone": "04 66 22 66 18",
+      "website": "https://www.rousselmenuiserie.com/",
+      "type": "Menuiserie ébénisterie"
+    },
+    {
+      "id": "guillaume-balbo",
+      "name": "Menuiserie de l'Uzège Guillaume Balbo",
+      "zone": "Uzès",
+      "address": "3 Chem. des Verveines, Uzès",
+      "phone": "06 03 61 68 62",
+      "website": "https://guillaumebalbo.wixsite.com/menuiseriedeluzege",
+      "type": "Menuiserie"
+    },
+    {
+      "id": "lestage",
+      "name": "Lestage Ébénisterie",
+      "zone": "Uzès",
+      "address": "ZAC Pont des Charrettes, Uzès",
+      "phone": "06 61 24 35 15",
+      "website": "https://lestage-ebenisterie.jimdosite.com/",
+      "type": "Ébénisterie"
+    },
+    {
+      "id": "ducros-atf",
+      "name": "Ducros Aluminium Toutes Fermetures",
+      "zone": "Uzès",
+      "address": "Chem. du Mas de Rey, Uzès",
+      "phone": "04 66 58 08 83",
+      "website": "http://www.ducros-atf.fr/",
+      "type": "Aluminium, fermetures"
+    },
+    {
+      "id": "maitrestore",
+      "name": "Maitre Store - La Boutique du Menuisier Uzès",
+      "zone": "Uzès",
+      "address": "D981, Uzès",
+      "phone": "04 66 74 31 36",
+      "website": "https://www.maitrestore.com/",
+      "type": "Stores, menuiserie"
+    }
+  ]
+}
