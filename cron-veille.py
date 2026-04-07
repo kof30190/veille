@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Cron job V2 — Run daily veille, push to GitHub, send Telegram link."""
-import subprocess, os, json, base64, urllib.request
+import subprocess, os, json
 from datetime import datetime, timezone, timedelta
 
 TZ = timezone(timedelta(hours=1))
@@ -26,81 +26,23 @@ def run_veille():
     return result.stdout, result.stderr, result.returncode
 
 def push_to_github():
-    token = get_token()
-    headers = {
-        "Authorization": f"token {token}",
-        "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "Hermes-Agent",
-        "Content-Type": "application/json"
-    }
-    
+    """Push updated files to GitHub using git CLI (more reliable than API)."""
     try:
-        # 1. Get current SHA
-        ref_url = f"https://api.github.com/repos/{OWNER}/{REPO}/git/ref/heads/main"
-        req = urllib.request.Request(ref_url, headers=headers)
-        resp = urllib.request.urlopen(req)
-        ref_data = json.loads(resp.read().decode())
-        commit_sha = ref_data["object"]["sha"]
-        
-        # 2. Get commit tree
-        commit_url = f"https://api.github.com/repos/{OWNER}/{REPO}/git/commits/{commit_sha}"
-        req = urllib.request.Request(commit_url, headers=headers)
-        resp = urllib.request.urlopen(req)
-        commit_data = json.loads(resp.read().decode())
-        tree_sha = commit_data["tree"]["sha"]
-        
-        # 3. Upload index.html
-        with open(os.path.join(VEILLE_DIR, "index.html"), 'rb') as f:
-            content = f.read()
-        blob_url = f"https://api.github.com/repos/{OWNER}/{REPO}/git/blobs"
-        blob_data = json.dumps({"content": base64.b64encode(content).decode(), "encoding": "base64"}).encode()
-        req = urllib.request.Request(blob_url, data=blob_data, headers=headers)
-        resp = urllib.request.urlopen(req)
-        blob_sha = json.loads(resp.read().decode())["sha"]
-        
-        # 4. Upload history
-        hist_path = os.path.join(VEILLE_DIR, "history", "snapshot_history.json")
-        if os.path.exists(hist_path):
-            with open(hist_path, 'rb') as f:
-                hist_content = f.read()
-            hist_blob = json.dumps({"content": base64.b64encode(hist_content).decode(), "encoding": "base64"}).encode()
-            req = urllib.request.Request(blob_url, data=hist_blob, headers=headers)
-            resp = urllib.request.urlopen(req)
-            hist_sha = json.loads(resp.read().decode())["sha"]
-        else:
-            hist_sha = blob_sha  # fallback
-        
-        # 5. Create new tree
-        tree_data = json.dumps({
-            "base_tree": tree_sha,
-            "tree": [
-                {"path": "index.html", "mode": "100644", "type": "blob", "sha": blob_sha},
-                {"path": "history/snapshot_history.json", "mode": "100644", "type": "blob", "sha": hist_sha}
-            ]
-        }).encode()
-        req = urllib.request.Request(f"https://api.github.com/repos/{OWNER}/{REPO}/git/trees", data=tree_data, headers=headers)
-        resp = urllib.request.urlopen(req)
-        new_tree_sha = json.loads(resp.read().decode())["sha"]
-        
-        # 6. Create commit
         now = datetime.now(TZ).strftime("%d/%m/%Y")
-        commit_data = json.dumps({
-            "message": f"Update report {now}",
-            "tree": new_tree_sha,
-            "parents": [commit_sha],
-            "author": {"name": "Hermes Agent", "email": "hermes@local", "date": datetime.now(TZ).isoformat()},
-        }).encode()
-        req = urllib.request.Request(f"https://api.github.com/repos/{OWNER}/{REPO}/git/commits", data=commit_data, headers=headers)
-        resp = urllib.request.urlopen(req)
-        new_commit = json.loads(resp.read().decode())["sha"]
-        
-        # 7. Update ref
-        ref_data = json.dumps({"sha": new_commit, "force": False}).encode()
-        req = urllib.request.Request(ref_url, data=ref_data, headers=headers)
-        urllib.request.urlopen(req)
+        # Stage and commit changed files
+        subprocess.run(["git", "add", "index.html", "history/snapshot_history.json"], cwd=VEILLE_DIR, check=True, capture_output=True)
+        # Check if there are any changes
+        result = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=VEILLE_DIR, capture_output=True)
+        if result.returncode != 0:
+            # There are changes — commit and push
+            subprocess.run(["git", "commit", "-m", f"Update report {now}"], cwd=VEILLE_DIR, check=True, capture_output=True)
+            subprocess.run(["git", "push", "origin", "main"], cwd=VEILLE_DIR, check=True, capture_output=True)
+            print("  Push: ✅ OK (committed & pushed)")
+        else:
+            print("  Push: ✅ OK (no changes to push)")
         return True
     except Exception as e:
-        print(f"  Push API error: {e}")
+        print(f"  Push error: {e}")
         return False
 
 def build_telegram_msg(stdout):
