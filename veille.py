@@ -2,7 +2,7 @@
 """
 Veille V2 — Détection avancée, diff intelligent, avis, légal, réseaux sociaux.
 """
-import json, os, re, time, hashlib, requests, difflib
+import json, os, re, time, hashlib, requests, difflib, uuid
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse, quote_plus
 
@@ -18,7 +18,15 @@ HEADERS = {
     'Accept': 'text/html,*/*;q=0.8', 'Accept-Language': 'fr-FR,fr;q=0.9',
 }
 
-ZONE_COLORS = {'Brigon': '#3B82F6', 'Sainte-Anastasie': '#10B981', 'Uzès': '#8B5CF6', 'Nîmes': '#F59E0B', 'Alès': '#EF4444'}
+ZONE_COLORS = {'Brignon': '#3B82F6', 'Sainte-Anastasie': '#10B981', 'Uzès': '#8B5CF6', 'Nîmes': '#F59E0B', 'Alès': '#EF4444', 'Saint-Geniès-de-Malgoirès': '#EC4899'}
+
+CAMOFOX_URL = "http://localhost:9377"
+# Vérifie si camofox est disponible au démarrage
+try:
+    _cf_health = requests.get(f"{CAMOFOX_URL}/health", timeout=3).json()
+    CAMOFOX_AVAILABLE = _cf_health.get("ok", False)
+except:
+    CAMOFOX_AVAILABLE = False
 
 # ══════════════════════════════════════════
 # UTILITIES
@@ -34,16 +42,55 @@ def save_json(path, data):
 def load_history():
     return load_json(os.path.join(HISTORY_DIR, "snapshot_history.json")) if os.path.exists(os.path.join(HISTORY_DIR, "snapshot_history.json")) else {"hashes": {}, "texts": {}, "changes_log": [], "last_run": None}
 
-def fetch(url, timeout=15, verify=True):
+def camofox_fetch(url, user_id="veille", wait=3):
+    """Récupère une page via CamoFox (anti-détection). Retourne (text, status)."""
+    if not CAMOFOX_AVAILABLE:
+        return None, "camofox_unavailable"
+    session_key = uuid.uuid4().hex[:8]
+    tab_id = None
+    try:
+        resp = requests.post(f"{CAMOFOX_URL}/tabs",
+            json={"userId": user_id, "sessionKey": session_key, "url": url},
+            timeout=20)
+        if resp.status_code != 200:
+            return None, f"camofox_tab_{resp.status_code}"
+        tab_id = resp.json().get("tabId")
+        if not tab_id:
+            return None, "camofox_no_tabid"
+        time.sleep(wait)
+        snap = requests.get(f"{CAMOFOX_URL}/tabs/{tab_id}/snapshot",
+            params={"userId": user_id}, timeout=20)
+        if snap.status_code != 200:
+            return None, f"camofox_snap_{snap.status_code}"
+        text = snap.json().get("snapshot", "")
+        return text, "ok_camofox"
+    except Exception as e:
+        return None, f"camofox_err:{str(e)[:60]}"
+    finally:
+        if tab_id:
+            try:
+                requests.delete(f"{CAMOFOX_URL}/tabs/{tab_id}", timeout=5)
+            except:
+                pass
+
+def fetch(url, timeout=15, verify=True, use_camofox_fallback=True):
     try:
         r = requests.get(url, headers=HEADERS, timeout=timeout, verify=verify)
-        return r.text if r.status_code == 200 else None, f"ok" if r.status_code == 200 else f"http_{r.status_code}"
+        if r.status_code == 200:
+            return r.text, "ok"
+        return None, f"http_{r.status_code}"
     except:
         try:
             r = requests.get(url, headers=HEADERS, timeout=timeout, verify=False)
-            return r.text if r.status_code == 200 else None, "ok_nossl" if r.status_code == 200 else f"http_{r.status_code}"
+            if r.status_code == 200:
+                return r.text, "ok_nossl"
+            return None, f"http_{r.status_code}"
         except Exception as e:
-            return None, f"error:{str(e)[:80]}"
+            pass
+    # Fallback camofox si requests échoue
+    if use_camofox_fallback and CAMOFOX_AVAILABLE:
+        return camofox_fetch(url)
+    return None, "all_methods_failed"
 
 def extract_text(html):
     if not html:
@@ -198,38 +245,47 @@ def monitor_website(company, history):
     return result
 
 def monitor_google_reviews(company):
-    """2. Google Reviews — check for new reviews via DuckDuckGo"""
+    """2. Google Maps — note et avis via CamoFox (fallback DDG)"""
     name = company.get('google_maps_search', company['name'])
     result = {'id': company['id'], 'source': 'google_reviews', 'status': 'ok', 'changes': []}
-    
+
+    # Tentative via CamoFox → DuckDuckGo (pas de popup consentement)
+    if CAMOFOX_AVAILABLE:
+        try:
+            search_url = f"https://duckduckgo.com/?q={quote_plus(name + ' avis site:google.com/maps OR maps.google.com')}&kl=fr-fr"
+            text, status = camofox_fetch(search_url, user_id="veille-gmaps", wait=4)
+            if text:
+                ratings = re.findall(r'(\d[,\.]\d)\s*(?:étoile|sur 5|/\s*5)', text, re.IGNORECASE)
+                review_counts = re.findall(r'([\d\s\u202f]+)\s*avis', text, re.IGNORECASE)
+                recent = re.findall(r'il y a \d+ (?:jour|semaine|mois)', text, re.IGNORECASE)
+                if ratings:
+                    result['changes'].append({'type': 'rating', 'note': ratings[0].replace(',', '.') + '/5', 'source': 'camofox'})
+                if review_counts:
+                    count_str = re.sub(r'\D', '', review_counts[0])
+                    if count_str.isdigit():
+                        result['changes'].append({'type': 'review_count', 'count': int(count_str)})
+                if recent:
+                    result['changes'].append({'type': 'recent_activity', 'detail': recent[0]})
+                if ratings or review_counts:
+                    return result
+        except:
+            pass
+
+    # Fallback DDG Lite
     url = f"https://lite.duckduckgo.com/lite/?q=avis+{quote_plus(name)}"
     try:
-        content, status = fetch(url)
+        content, status = fetch(url, use_camofox_fallback=False)
         if content:
             tree_text = extract_text(content)
-            # Look for rating patterns and recent mentions
             ratings = re.findall(r'(\d[,.]?\d?)\s*/\s*5', tree_text, re.IGNORECASE)
             review_count = re.findall(r'(\d+)\s*avis', tree_text, re.IGNORECASE)
-            
             if ratings:
-                result['changes'].append({
-                    'type': 'rating',
-                    'note': ratings[0].replace(',', '.') + '/5'
-                })
+                result['changes'].append({'type': 'rating', 'note': ratings[0].replace(',', '.') + '/5'})
             if review_count:
-                result['changes'].append({
-                    'type': 'review_count',
-                    'count': int(review_count[0])
-                })
-            # Check for recent review mentions
-            recent_keywords = ['dernier', 'récent', 'nouveau', 'il y a', 'avis récent']
-            for kw in recent_keywords:
-                if kw in tree_text.lower():
-                    result['changes'].append({'type': 'recent_activity', 'detail': f'Mention activité récente'})
-                    break
+                result['changes'].append({'type': 'review_count', 'count': int(review_count[0])})
     except:
         pass
-    
+
     return result
 
 def monitor_pappers(company):
@@ -277,46 +333,115 @@ def monitor_pappers(company):
     
     return result
 
-def monitor_social_media(company):
-    """4. Social Media monitoring"""
-    result = {'id': company['id'], 'source': 'social_media', 'changes': [], 'profiles': {}}
-    
+def monitor_social_media(company, history=None):
+    """4. Social Media monitoring — avec suivi des changements"""
+    cid = company['id']
+    result = {'id': cid, 'source': 'social_media', 'changes': [], 'profiles': {}}
+    if history is None:
+        history = {}
+
     social_urls = {}
     for platform in ['facebook', 'instagram', 'linkedin']:
         val = company.get(platform, '')
-        # Clean Facebook pixel URLs
         if platform == 'facebook' and val:
-            val = re.search(r'(https?://www\.facebook\.com/[^?&]+)', val)
-            val = val.group(1) if val else ''
+            m = re.search(r'(https?://www\.facebook\.com/[^?&]+)', val)
+            val = m.group(1) if m else val
         if val:
             social_urls[platform] = val
-    
+
     if not social_urls:
         result['changes'].append({'type': 'no_social', 'detail': 'Aucun réseau social trouvé'})
         return result
-    
+
+    prev_social = history.setdefault('social', {}).setdefault(cid, {})
+
     for platform, url in social_urls.items():
         try:
-            content, status = fetch(url, timeout=10)
-            if content:
-                text = extract_text(content)
-                result['profiles'][platform] = {'url': url, 'status': 'reachable'}
-                
-                # Extract recent activity indicators
-                # Look for recent dates, posts, "publié il y a" patterns
-                recent_patterns = ['il y a \d+', 'publié le', 'dernière publication']
-                for pat in recent_patterns:
-                    matches = re.findall(pat, text, re.IGNORECASE)
-                    if matches:
-                        result['profiles'][platform]['recent_activity'] = True
-                        break
-                
-                # Check if account is active
-                if 'page introuvable' in text.lower() or 'not found' in text.lower():
-                    result['profiles'][platform]['status'] = 'inactive'
+            use_camofox = platform in ('facebook', 'instagram') and CAMOFOX_AVAILABLE
+            if use_camofox:
+                text, status = camofox_fetch(url, user_id="veille-social", wait=4)
+            else:
+                content, status = fetch(url, timeout=10, use_camofox_fallback=CAMOFOX_AVAILABLE)
+                text = extract_text(content) if content else None
+
+            if text:
+                profile = {'url': url, 'status': 'reachable'}
+
+                # Activité récente
+                recent = re.findall(r'il y a \d+ (?:heure|jour|semaine|mois|minute)', text, re.IGNORECASE)
+                if recent:
+                    profile['recent_activity'] = recent[0]
+
+                # Posts / publications
+                posts = re.findall(r'(\d+)\s*(?:publication|post|photo|vidéo)', text, re.IGNORECASE)
+                if posts:
+                    profile['posts'] = posts[0]
+
+                # Followers/likes
+                followers = re.findall(r'([\d\s,]+)\s*(?:j\'aime|abonné|follower|like)', text, re.IGNORECASE)
+                followers_clean = re.sub(r'\D', '', followers[0]) if followers else None
+                if followers_clean:
+                    profile['followers'] = followers_clean
+
+                # Page inactive
+                if any(x in text.lower() for x in ['page introuvable', 'not found', 'indisponible', 'content not found']):
+                    profile['status'] = 'inactive'
+
+                result['profiles'][platform] = profile
+
+                # ── Comparaison avec historique ──
+                prev = prev_social.get(platform, {})
+
+                # Nouveau post détecté (activité récente fraîche = heure/jour)
+                if recent and any(x in recent[0] for x in ['heure', 'minute']):
+                    prev_recent = prev.get('recent_activity', '')
+                    if recent[0] != prev_recent:
+                        result['changes'].append({
+                            'type': 'social_new_post',
+                            'platform': platform,
+                            'detail': recent[0]
+                        })
+
+                # Changement de followers
+                if followers_clean and prev.get('followers'):
+                    try:
+                        diff = int(followers_clean) - int(prev['followers'])
+                        if abs(diff) >= 5:
+                            result['changes'].append({
+                                'type': 'social_followers_change',
+                                'platform': platform,
+                                'old': prev['followers'],
+                                'new': followers_clean,
+                                'diff': diff
+                            })
+                    except:
+                        pass
+
+                # Compte réactivé (était unreachable, maintenant reachable)
+                if prev.get('status') in ('unreachable', 'inactive') and profile['status'] == 'reachable':
+                    result['changes'].append({
+                        'type': 'social_reactivated',
+                        'platform': platform
+                    })
+
+                # Mise à jour historique
+                prev_social[platform] = {
+                    'status': profile['status'],
+                    'followers': followers_clean or prev.get('followers'),
+                    'recent_activity': recent[0] if recent else prev.get('recent_activity'),
+                    'posts': posts[0] if posts else prev.get('posts'),
+                }
+            else:
+                result['profiles'][platform] = {'url': url, 'status': 'unreachable'}
+                # Compte disparu
+                if prev_social.get(platform, {}).get('status') == 'reachable':
+                    result['changes'].append({
+                        'type': 'social_went_offline',
+                        'platform': platform
+                    })
         except:
             result['profiles'][platform] = {'url': url, 'status': 'unreachable'}
-    
+
     return result
 
 def monitor_google_alerts(company):
@@ -350,9 +475,110 @@ def monitor_google_alerts(company):
     return result
 
 # ══════════════════════════════════════════
+# DISCOVERY — Nouvelles entreprises
+# ══════════════════════════════════════════
+DISCOVERY_QUERIES = [
+    "menuiserie Brignon Gard",
+    "menuiserie Uzès 30700",
+    "menuiserie Alès 30100",
+    "artisan menuisier Saint-Chaptes Gard",
+    "artisan menuisier Sainte-Anastasie Gard",
+    "fermetures volets stores Uzès",
+    "aluminium PVC fenêtres Pont-Saint-Esprit",
+    "menuiserie sur mesure Gard 30",
+    "stores motorisés Uzès Brignon",
+    "pergola véranda Gard Uzès",
+]
+
+def _normalize_name(name):
+    """Normalise un nom pour comparaison (minuscules, sans accents, sans ponctuation)."""
+    import unicodedata
+    name = name.lower()
+    name = ''.join(c for c in unicodedata.normalize('NFD', name) if unicodedata.category(c) != 'Mn')
+    name = re.sub(r'[^a-z0-9\s]', ' ', name)
+    return re.sub(r'\s+', ' ', name).strip()
+
+def _is_known(candidate_name, candidate_url, known_companies):
+    """Vérifie si une entreprise est déjà suivie (par URL ou nom similaire)."""
+    norm_candidate = _normalize_name(candidate_name)
+    for comp in known_companies:
+        # Match URL
+        if candidate_url and comp.get('website'):
+            cu = re.sub(r'^https?://(www\.)?', '', candidate_url.rstrip('/'))
+            ku = re.sub(r'^https?://(www\.)?', '', comp['website'].rstrip('/'))
+            if cu and ku and (cu in ku or ku in cu):
+                return True
+        # Match nom (au moins 3 mots communs significatifs)
+        norm_known = _normalize_name(comp['name'])
+        words_c = set(w for w in norm_candidate.split() if len(w) > 3)
+        words_k = set(w for w in norm_known.split() if len(w) > 3)
+        if words_c and words_k and len(words_c & words_k) >= 2:
+            return True
+    return False
+
+def discover_new_companies(data, history):
+    """Recherche de nouvelles entreprises non encore suivies."""
+    known = data['companies']
+    already_discovered = set(history.setdefault('discovered_ids', []))
+    new_found = []
+
+    for query in DISCOVERY_QUERIES:
+        try:
+            url = f"https://duckduckgo.com/?q={quote_plus(query)}&kl=fr-fr&ia=web"
+            text, status = camofox_fetch(url, user_id="veille-discovery", wait=5)
+            if not text:
+                # Fallback DDG Lite
+                content, _ = fetch(f"https://lite.duckduckgo.com/lite/?q={quote_plus(query)}", use_camofox_fallback=False)
+                text = extract_text(content) if content else ''
+
+            if not text:
+                continue
+
+            # Extraction des liens et titres depuis le snapshot
+            # Format camofox : link "Titre" [eN]:\n  /url: https://...
+            link_blocks = re.findall(r'link "([^"]{5,80})" \[e\d+\].*?/url: (https?://[^\s\n]+)', text, re.DOTALL)
+            # Format texte simple (DDG Lite)
+            if not link_blocks:
+                links = re.findall(r'(https?://(?!(?:duckduckgo|duck|google|facebook|instagram|linkedin|wikipedia|youtube))[^\s"<>]+)', text)
+                titles = re.findall(r'([A-Z][^\n.]{10,60}(?:menuiserie|fermeture|store|aluminium|bois|pergola|volet|fenêtre|ébénist)[^\n.]{0,40})', text, re.IGNORECASE)
+                link_blocks = list(zip(titles, links))[:10]
+
+            for title, link_url in link_blocks[:15]:
+                # Filtrer les domaines non pertinents
+                skip_domains = ['duckduckgo', 'google', 'facebook', 'instagram', 'linkedin',
+                                'wikipedia', 'youtube', 'pagesjaunes', 'leboncoin', 'indeed',
+                                'pole-emploi', 'lacentrale', 'pappers', 'societe.com', 'actu.fr']
+                if any(d in link_url for d in skip_domains):
+                    continue
+                # Filtrer les titres non pertinents
+                business_kw = ['menuiser', 'fermeture', 'store', 'aluminium', 'bois', 'pergola',
+                               'volet', 'fenêtre', 'ebenis', 'vitr', 'clotur', 'portail', 'menuiserie']
+                if not any(kw in title.lower() for kw in business_kw):
+                    continue
+
+                uid = re.sub(r'[^a-z0-9]', '-', _normalize_name(title))[:40]
+                if uid in already_discovered:
+                    continue
+                if _is_known(title, link_url, known):
+                    continue
+
+                # Nouveau candidat !
+                new_found.append({'name': title.strip(), 'url': link_url, 'query': query, 'uid': uid})
+                already_discovered.add(uid)
+
+        except Exception as e:
+            pass
+        time.sleep(1)
+
+    # Mettre à jour l'historique
+    history['discovered_ids'] = list(already_discovered)
+
+    return new_found
+
+# ══════════════════════════════════════════
 # REPORT GENERATION
 # ══════════════════════════════════════════
-def generate_report(data, all_results):
+def generate_report(data, all_results, new_companies=None):
     """Generate HTML report"""
     now = datetime.now(TZ).strftime('%d/%m/%Y à %H:%M')
     
@@ -364,7 +590,8 @@ def generate_report(data, all_results):
             zone_data[zone] = []
         zone_data[zone].append(r)
     
-    changed = [r for r in all_results if any(c.get('type') in ['content_changed', 'legal_change', 'mentions_new'] for c in r.get('changes', []))]
+    CHANGE_TYPES = ['content_changed', 'legal_change', 'mentions_new', 'social_new_post', 'social_followers_change', 'social_reactivated', 'social_went_offline']
+    changed = [r for r in all_results if any(c.get('type') in CHANGE_TYPES for c in r.get('changes', []))]
     errors = [r for r in all_results if r.get('status', '').startswith('error')]
     
     html = """<!DOCTYPE html>
@@ -565,6 +792,20 @@ def generate_report(data, all_results):
                         badges.append('<span class="status-badge status-legal">⚖️ Changement légal</span>')
                     elif ctype == 'mentions_new':
                         badges.append('<span class="status-badge status-legal">📰 Mention trouvée</span>')
+                    elif ctype == 'social_new_post':
+                        pl = c.get('platform','').upper()[:2]
+                        badges.append(f'<span class="status-badge status-social">📲 Post {pl}</span>')
+                    elif ctype == 'social_followers_change':
+                        diff = c.get('diff', 0)
+                        sign = '+' if diff > 0 else ''
+                        pl = c.get('platform','').upper()[:2]
+                        badges.append(f'<span class="status-badge status-social">👥 {pl} {sign}{diff}</span>')
+                    elif ctype == 'social_reactivated':
+                        pl = c.get('platform','').upper()[:2]
+                        badges.append(f'<span class="status-badge status-social">✅ {pl} réactivé</span>')
+                    elif ctype == 'social_went_offline':
+                        pl = c.get('platform','').upper()[:2]
+                        badges.append(f'<span class="status-badge status-error">⚠️ {pl} hors ligne</span>')
                     elif ctype == 'no_change':
                         badges.append('<span class="status-badge status-clean">✓ OK</span>')
             
@@ -581,10 +822,15 @@ def generate_report(data, all_results):
                     
                     if c.get('keywords'):
                         kw_items = []
-                        for cat, words in c['keywords'].items():
-                            cls = 'kw-new' if cat == 'nouveau' else ('kw-promo' if cat == 'promotion' else ('kw-tech' if cat == 'technologie' else 'kw-cert'))
-                            for w in words:
-                                kw_items.append(f'<span class="kw {cls}">{w}</span>')
+                        kw = c['keywords']
+                        if isinstance(kw, dict):
+                            for cat, words in kw.items():
+                                cls = 'kw-new' if cat == 'nouveau' else ('kw-promo' if cat == 'promotion' else ('kw-tech' if cat == 'technologie' else 'kw-cert'))
+                                for w in words:
+                                    kw_items.append(f'<span class="kw {cls}">{w}</span>')
+                        elif isinstance(kw, list):
+                            for w in kw:
+                                kw_items.append(f'<span class="kw kw-new">{w}</span>')
                         if kw_items:
                             details_html += f'<div class="keywords">{"".join(kw_items)}</div>'
                     
@@ -604,7 +850,20 @@ def generate_report(data, all_results):
             website = comp.get('website', '')
             website_html = f'<a href="{website}" target="_blank">🌐 Site</a>' if website else 'Pas de site'
             phone = comp.get('phone', '')
-            
+
+            # Liens réseaux sociaux depuis les données de l'entreprise
+            social_links = []
+            icons = {'facebook': ('FB', '#1877F2'), 'instagram': ('IG', '#E1306C'), 'linkedin': ('LI', '#0A66C2')}
+            for platform, (icon, color) in icons.items():
+                url_val = comp.get(platform, '')
+                if url_val:
+                    # Nettoyer les URLs Facebook avec paramètres
+                    if platform == 'facebook':
+                        m = re.search(r'(https?://www\.facebook\.com/[^?&\s]+)', url_val)
+                        url_val = m.group(1) if m else url_val
+                    social_links.append(f'<a href="{url_val}" target="_blank" style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:600;color:{color};background:rgba(255,255,255,0.05);text-decoration:none;border:1px solid {color}40;">{icon}</a>')
+            social_html_inline = f'<div style="display:flex;gap:5px;margin-top:5px;">{"".join(social_links)}</div>' if social_links else ''
+
             html += f"""
     <div class="card {card_class}">
       <div class="card-header">
@@ -612,6 +871,7 @@ def generate_report(data, all_results):
       </div>
       <div class="card-type">{comp.get('type', '')}</div>
       <div class="card-meta">{phone} · {website_html}</div>
+      {social_html_inline}
       <div style="margin: 6px 0;">{''.join(badges)}</div>
       {details_html}
     </div>
@@ -621,6 +881,31 @@ def generate_report(data, all_results):
 </div>
 """
     
+    # Section découverte
+    if new_companies:
+        html += f"""
+<div class="zone">
+  <div class="zone-header" style="border-color: #F472B6;">
+    <span class="zone-name" style="color: #F472B6;">✨ Nouvelles entreprises détectées</span>
+    <span class="zone-badge">{len(new_companies)} candidat{'s' if len(new_companies) > 1 else ''}</span>
+  </div>
+  <div class="cards">
+"""
+        for nc in new_companies:
+            html += f"""
+    <div class="card" style="border-left: 3px solid #F472B6;">
+      <div class="card-header">
+        <span class="card-name">{nc['name']}</span>
+        <span class="status-badge status-new">🆕 Nouveau</span>
+      </div>
+      <div class="card-type">Trouvé via : {nc['query']}</div>
+      <div class="card-meta"><a href="{nc['url']}" target="_blank">🌐 {nc['url'][:60]}{'...' if len(nc['url']) > 60 else ''}</a></div>
+    </div>
+"""
+        html += """  </div>
+</div>
+"""
+
     html += f"""
 <div class="footer">
   Veille automatique · {n_companies} entreprises · Sources: sites web, avis Google, Pappers, réseaux sociaux · Généré à {now}
@@ -672,31 +957,40 @@ def main():
             time.sleep(1)
         
         # 4. Social Media
-        social_result = monitor_social_media(company)
+        social_result = monitor_social_media(company, history)
         all_results.append(social_result)
         
         # 5. Google Alerts / Mentions
         alerts_result = monitor_google_alerts(company)
         all_results.append(alerts_result)
-    
+
+    # 6. Découverte de nouvelles entreprises
+    print(f"  🔎 Recherche de nouvelles entreprises...")
+    new_companies = discover_new_companies(data, history)
+    if new_companies:
+        print(f"  ✨ {len(new_companies)} nouveau(x) candidat(s) trouvé(s)")
+
     # Save updated history
     history['last_run'] = datetime.now(TZ).isoformat()
     save_json(os.path.join(HISTORY_DIR, "snapshot_history.json"), history)
-    
+
     # Generate report
-    report = generate_report(data, all_results)
+    report = generate_report(data, all_results, new_companies)
     with open(REPORT_FILE, 'w') as f:
         f.write(report)
-    
+
     # Summary
-    n_changed = len(set(r['id'] for r in all_results if any(c.get('type') in ['content_changed', 'legal_change', 'mentions_new'] for c in r.get('changes', []))))
+    CHANGE_TYPES = ['content_changed', 'legal_change', 'mentions_new', 'social_new_post', 'social_followers_change', 'social_reactivated', 'social_went_offline']
+    n_changed = len(set(r['id'] for r in all_results if any(c.get('type') in CHANGE_TYPES for c in r.get('changes', []))))
     n_errors = len(set(r['id'] for r in all_results if r.get('status', '').startswith('error')))
-    
+
     msg = f"🔍 Veille du {datetime.now(TZ).strftime('%d/%m/%Y')} terminée"
     msg += f"\n\n{'✅' if n_changed == 0 else f'⚡ {n_changed} changement(s) détecté(s)'}"
+    if new_companies:
+        msg += f"\n✨ {len(new_companies)} nouvelle(s) entreprise(s) détectée(s)"
     if n_errors > 0:
         msg += f"\n❌ {n_errors} erreur(s) de connexion"
-    
+
     print(f"\n---TELEGRAM_MSG---\n{msg}")
     print("---REPORT_PATH---")
     print(REPORT_FILE)
