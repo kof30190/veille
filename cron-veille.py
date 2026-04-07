@@ -69,9 +69,8 @@ def main():
     if stderr:
         print(f"STDERR: {stderr}")
     
-    # Step 2: Push to GitHub via API
-    pushed = push_to_github()
-    print(f"  Push: {'✅ OK' if pushed else '❌ Échoué'}")
+    # Step 2: Push to GitHub
+    push_to_github()
     
     # Step 3: Build and print message
     msg = build_telegram_msg(stdout)
